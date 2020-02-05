@@ -1,0 +1,11 @@
+--- a/src/cpu/xbyak/xbyak.h	2020-02-04 15:12:32.586176051 +0100
++++ b/src/cpu/xbyak/xbyak.h	2020-02-04 15:12:42.758058038 +0100
+@@ -72,6 +72,8 @@
+ #include <iostream>
+ #endif
+ 
++#undef nop
++
+ // #define XBYAK_DISABLE_AVX512
+ 
+ //#define XBYAK_USE_MMAP_ALLOCATOR

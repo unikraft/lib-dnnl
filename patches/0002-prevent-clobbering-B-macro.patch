@@ -1,0 +1,11 @@
+--- a/src/common/tag_traits.hpp	2020-02-02 18:20:18.349160812 +0100
++++ b/src/common/tag_traits.hpp	2020-02-02 18:20:32.421006289 +0100
+@@ -22,6 +22,8 @@
+ #include "c_types_map.hpp"
+ #include "utils.hpp"
+ 
++#undef _B
++
+ namespace dnnl {
+ namespace impl {
+ 

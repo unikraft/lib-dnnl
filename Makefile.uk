@@ -1,0 +1,321 @@
+#  libdnnl Makefile.uk
+#
+#  Authors: Felipe Huici <felipe.huici@neclab.eu>
+#
+#   Copyright (c) 2020, NEC Europe Ltd., NEC Corporation. All rights reserved.
+#
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions
+#  are met:
+#
+#  1. Redistributions of source code must retain the above copyright
+#     notice, this list of conditions and the following disclaimer.
+#  2. Redistributions in binary form must reproduce the above copyright
+#     notice, this list of conditions and the following disclaimer in the
+#     documentation and/or other materials provided with the distribution.
+#  3. Neither the name of the copyright holder nor the names of its
+#     contributors may be used to endorse or promote products derived from
+#     this software without specific prior written permission.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+#
+#  THIS HEADER MAY NOT BE EXTRACTED OR MODIFIED IN ANY WAY.
+#
+
+################################################################################
+# Library registration
+################################################################################
+$(eval $(call addlib_s,libdnnl,$(CONFIG_LIBDNNL)))
+
+ifeq ($(CONFIG_LIBDNNL),y)
+ifneq ($(CONFIG_LIBCOMPILER_RT),y)
+$(error Require libcompiler_rt)
+endif
+endif
+
+################################################################################
+# Sources
+################################################################################
+LIBDNNL_VERSION=1.2
+LIBDNNL_URL=https://github.com/intel/mkl-dnn/archive/v$(LIBDNNL_VERSION).zip
+LIBDNNL_PATCHDIR=$(LIBDNNL_BASE)/patches
+$(eval $(call fetch,libdnnl,$(LIBDNNL_URL)))
+$(eval $(call patch,libdnnl,$(LIBDNNL_PATCHDIR),mkl-dnn-$(LIBDNNL_VERSION)))
+
+################################################################################
+# Helpers
+################################################################################
+LIBDNNL_SUBDIR=mkl-dnn-$(LIBDNNL_VERSION)
+LIBDNNL_SRC=$(LIBDNNL_ORIGIN)/$(LIBDNNL_SUBDIR)
+
+################################################################################
+# Library includes
+################################################################################
+LIBMKL-INCLUDES += -I$(LIBDNNL_SRC)/include      \
+                   -I$(LIBDNNL_SRC)/src          \
+                   -I$(LIBDNNL_SRC)/src/cpu      \
+                   -I$(LIBDNNL_SRC)/src/cpu/gemm \
+                   -I$(LIBDNNL_SRC)/src/common   \
+                   -I$(LIBDNNL_BASE)/include     \
+
+CINCLUDES-$(CONFIG_LIBDNNL) += $(LIBMKL-INCLUDES)
+CXXINCLUDES-$(CONFIG_LIBDNNL) += $(LIBMKL-INCLUDES)
+
+################################################################################
+# Global flags
+################################################################################
+LIBDNNL-CONFIG_FLAGS = -DCMAKE_BUILD_TYPE=Release        \
+                       -DDNNL_ENABLE_CONCURRENT_EXEC=OFF \
+                       -DDNNL_LIBRARY_TYPE=STATIC 	 \
+                       -DDNNL_THREADING=OMP:COMP 	 \
+                       -DDNNL_USE_MKL=NONE 		 \
+                       -DDNNL_VERBOSE=ON 		 \
+                       -DWITH_EXAMPLE=OFF 		 \
+                       -DWITH_TEST=OFF			 \
+		       -DDNNL_ENABLE_JIT_PROFILING=OFF
+
+LIBDNNL_CFLAGS-y      +=  $(LIBDNNL-CONFIG_FLAGS)
+LIBDNNL_CXXFLAGS-y    +=  $(LIBDNNL-CONFIG_FLAGS)
+
+################################################################################
+# Suppress Flags
+################################################################################
+LIBDNNL_SUPPRESS_FLAGS-y += -Wno-unused-parameter              \
+                            -Wno-unused-but-set-parameter      \
+                            -Wno-unknown-pragmas               \
+			    -Wno-extra                         \
+			    -Wno-attributes		       \
+			    -Wno-parentheses		       \
+			    -fcompare-debug-second  # supress notes
+
+LIBDNNL_CFLAGS-y   += $(LIBDNNL_SUPPRESS_FLAGS-y) -Wno-implicit-function-declaration
+LIBDNNL_CXXFLAGS-y += $(LIBDNNL_SUPPRESS_FLAGS-y)
+
+################################################################################
+# Sources
+################################################################################
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/dnnl_debug.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/scratchpad.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/batch_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/binary.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/lrn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/shuffle.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/primitive_exec_types.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/memory.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/pooling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/inner_product.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/verbose.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/primitive_attr.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/primitive_iterator.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/engine.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/query.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/reorder.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/sum.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/convolution_pd.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/memory_desc_wrapper.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/primitive.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/rnn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/matmul.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/resampling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/layer_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/concat.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/primitive_hashing.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/dnnl_debug_autogenerated.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/deconvolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/softmax.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/stream.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/primitive_desc.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/eltwise.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/common/memory_zero_pad.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_tbb_batch_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_f32_wino_conv_4x3.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/nchw_pooling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_dw_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_batch_normalization_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_batch_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_eltwise.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_shuffle.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_reorder.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_reorder_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_x8s8s32x_1x1_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_concat.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_batch_normalization_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_x8s8s32x_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_batch_normalization_s8.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_layer_normalization_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_reducer.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_eltwise.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/nspc_batch_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_lrn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_x8s8s32x_1x1_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_f32_wino_conv_2x3.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_x8s8s32x_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_convolution_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_eltwise_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_layer_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_sse41_1x1_conv_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_lrn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_conv_winograd_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_bf16_dw_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_sse41_conv_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_bf16_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_x8s8s32x_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_bf16_sum.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_shuffle_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_eltwise_injector.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_pooling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_deconvolution_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_batch_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_x8s8s32x_deconvolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_barrier.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_bf16_inner_product.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_x8s8s32x_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_x8s8s32x_inner_product.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/bfloat16.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_bf16_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_f32_wino_conv_4x3_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_bf16_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_bf16_1x1_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/simple_concat.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_1x1_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_sse41_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_convolution_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_softmax_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_transpose_src_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_bf16_1x1_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/nhwc_pooling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_pooling_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_reorder.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_x8s8s32x_1x1_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_inner_product_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/simple_sum.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_sse41_1x1_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_i8i8_pooling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_convolution_winograd.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_core_u8s8s32x_wino_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_inner_product.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_lrn_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ncsp_batch_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_conv_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_softmax.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_softmax.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_pooling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_dw_conv_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_1x1_conv_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_1x1_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_inner_product_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_x8s8s32x_1x1_conv_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_layer_normalization.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx2_x8s8s32x_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_avx512_common_1x1_convolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_isa_traits.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_deconvolution.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_sum.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/cpu_engine.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_pool_kernel.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm_inner_product.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/ref_lrn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_uni_lrn_kernel_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/resampling/simple_resampling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/resampling/ref_resampling.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/resampling/cpu_resampling_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/binary/cpu_binary_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/binary/jit_uni_binary.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/binary/ref_binary.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/binary/jit_uni_i8i8_binary.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/matmul/gemm_x8s8s32x_matmul.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/matmul/cpu_matmul_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/matmul/gemm_bf16_matmul.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/matmul/gemm_f32_matmul.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/matmul/ref_matmul.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/rnn_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/cell_gru_lbr.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/ref_rnn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/ref_postgemm_rnn.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/cpu_rnn_list.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/ref_postgemm_lstm.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/ref_postgemm_gru_lbr.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/ref_postgemm_gru.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/cell_gru.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/rnn/cell_common.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_utils/jit_utils.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_utils/jitprofiling/jitprofiling.c
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/jit_utils/linux_perf/linux_perf.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/gemm_info.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/gemm_pack.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/gemm_driver.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/gemm.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/gemv_driver.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_gemm_s8u8s32_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_kernel_gemv_s8x8s32_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_sum_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_sum_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_sum_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_sum_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_sum_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_gemv_s8x8s32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_sum_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_sum_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_gemm_s8u8s32_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx2_u8_copy_sum_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/ref_gemm_s8x8s32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/simple_gemm_s8s8s32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/s8x8s32/jit_avx512_core_u8_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/gemm_utils_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx512_core_f32_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx2_f32_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx2_f32_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_f32_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_f32_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_f32_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx2_kernel_sgemm_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx512_core_f32_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_kernel_sgemm_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_f32_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx2_f32_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_gemv_t_f32_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_gemv_t_f32_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_f32_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_f32_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_f32_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx512_core_f32_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_gemm_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx512_common_gemm_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx2_f32_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_kernel_b0_sgemm_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_kernel_b0_sgemm_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/ref_gemm_f32.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_sse41_f32_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx512_core_f32_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/f32/jit_avx_kernel_sgemm_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/bf16/jit_avx512_core_s16_copy_an_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/bf16/jit_avx512_core_s16_copy_bt_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/bf16/jit_avx512_core_s16_copy_at_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/bf16/jit_avx512_core_gemm_bf16bf16f32_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/cpu/gemm/bf16/jit_avx512_core_s16_copy_bn_kern.cpp
+LIBDNNL_SRCS-y += $(LIBDNNL_SRC)/src/compute/dispatch.cpp
+

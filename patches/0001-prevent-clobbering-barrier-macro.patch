@@ -1,0 +1,11 @@
+--- a/src/cpu/cpu_barrier.hpp	2020-02-01 22:15:52.999902062 +0100
++++ b/src/cpu/cpu_barrier.hpp	2020-02-01 22:16:03.487787545 +0100
+@@ -22,6 +22,8 @@
+ #include "jit_generator.hpp"
+ #include "utils.hpp"
+ 
++#undef barrier
++
+ namespace dnnl {
+ namespace impl {
+ namespace cpu {
