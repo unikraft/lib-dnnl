@@ -1,0 +1,17 @@
+menuconfig LIBDNNL
+    bool "dnnl - Intel Math Kernel Library for DNNs"
+    default n
+    select LIBNEWLIBC
+    select LIBCOMPILER_RT
+    select UKSYSINFO
+    select LIBCXX
+    select LIBCXXABI
+    select LIBUNWIND
+    select LIBPTHREAD_EMBEDDED
+    select CXX_THREADS
+    select LIBUKMMAP
+    select LIBPOSIX_LIBDL
+    select LIBPOSIX_SYSINFO
+    select LIBARM_INTRINSICS if ARCH_ARM_64
+    select LIBINTEL_INTRINSICS if ARCH_x86_64
+
