@@ -1,0 +1,6 @@
+name        := "dnnl"
+description := "A performance and deep learning framework for neural networks optimized for Intel Architecture Processors and Intel Processor Graphics."
+gitrepo     := "https://github.com/intel/mkl-dnn.git"
+homepage    := "https://www.oneapi.io/open-source/"
+version     := 1.2 sha256:8f4e68b443ae87a0d97d968aed26e54e69c9612c69797c43965ea0dd0f0f7251 https://github.com/intel/mkl-dnn/archive/v1.2.zip
+license     := "Apache-2.0"
